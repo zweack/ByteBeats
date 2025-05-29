@@ -1,6 +1,5 @@
 # ByteBeats
-Use Spotify inside vscode.
-Provides integration with Spotify Desktop client. 
+ByteBeats enables using Spotify inside VS Code and provides integration with Spotify Desktop client. 
 
 <hr>
 
@@ -8,13 +7,13 @@ Note: ByteBeats is an active fork of [vscode-spotify](https://github.com/ShyykoS
 
 <hr>
 
-**This extension requires Spotify Premium to work on Windows**
-
 ## How it works
 
 - On macOS, this extension uses [spotify-node-applescript](https://github.com/andrehaveman/spotify-node-applescript) (basically a wrapper for the official Spotify AppleScript API) to communicate with Spotify.
 - On Windows, the extension uses the Spotify Web API. 
 - On Linux, it uses a combination of dbus and pactl.
+- 
+**This extension requires Spotify Premium to work on Windows**
 
 Spotify Web API implementation can be used on any platform, but it does have some drawbacks:
 - It doesn't work without internet connection (Linux and OS X implementations do).
