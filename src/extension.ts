@@ -18,10 +18,10 @@ export function activate(context: ExtensionContext) {
     getStore(context.globalState);
     const spotifyStatus = new SpotifyStatus();
     const controller = new SpotifyStatusController();
-    const playlistTreeView = window.createTreeView('vscode-spotify-playlists', { treeDataProvider: new TreePlaylistProvider() });
-    const albumTreeView = window.createTreeView('vscode-spotify-albums', { treeDataProvider: new TreeAlbumProvider() });
+    const playlistTreeView = window.createTreeView('bytebeats-playlists', { treeDataProvider: new TreePlaylistProvider() });
+    const albumTreeView = window.createTreeView('bytebeats-albums', { treeDataProvider: new TreeAlbumProvider() });
     const treeTrackProvider = new TreeTrackProvider();
-    const trackTreeView = window.createTreeView('vscode-spotify-tracks', { treeDataProvider: treeTrackProvider });
+    const trackTreeView = window.createTreeView('bytebeats-tracks', { treeDataProvider: treeTrackProvider });
     treeTrackProvider.bindView(trackTreeView);
     // Add to a list of disposables which are disposed when this extension is deactivated.
     context.subscriptions.push(connectPlaylistTreeView(playlistTreeView));
@@ -30,5 +30,8 @@ export function activate(context: ExtensionContext) {
     context.subscriptions.push(controller);
     context.subscriptions.push(spotifyStatus);
     context.subscriptions.push(playlistTreeView);
-    context.subscriptions.push(createCommands(SpoifyClientSingleton.spotifyClient));
+
+    // FIX: Use the actual Spotify client instance
+    const spotifyClient = SpoifyClientSingleton.getSpotifyClient(controller.queryStatus);
+    context.subscriptions.push(createCommands(spotifyClient));
 }

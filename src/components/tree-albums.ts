@@ -80,8 +80,8 @@ class AlbumTreeItem extends vscode.TreeItem {
     }
 
     iconPath = {
-        light: path.join(__filename, '..', '..', '..', 'resources', 'light', 'playlist.svg'),
-        dark: path.join(__filename, '..', '..', '..', 'resources', 'dark', 'playlist.svg')
+        light: vscode.Uri.file(path.join(__filename, '..', '..', '..', 'resources', 'light', 'playlist.svg')),
+        dark: vscode.Uri.file(path.join(__filename, '..', '..', '..', 'resources', 'dark', 'playlist.svg'))
     };
     contextValue = 'album';
 

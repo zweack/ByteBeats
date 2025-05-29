@@ -6,6 +6,7 @@ import { LyricsController } from './lyrics/lyrics';
 import { SpotifyClient } from './spotify/common';
 import { Album, Playlist } from './state/state';
 import { SIGN_IN_COMMAND } from './consts/consts';
+import { window } from 'vscode';
 
 export function createCommands(sC: SpotifyClient): { dispose: () => void } {
     const lC = new LyricsController();
@@ -36,12 +37,25 @@ export function createCommands(sC: SpotifyClient): { dispose: () => void } {
             sC.playPause();
         }
     });
-    const playTrack = commands.registerCommand('spotify.playTrack', async (/*arguments from TrackTreeItem event*/offset: number, list: Playlist | Album) => {
-        await actionsCreator.playTrack(offset, list);
+    const playTrack = commands.registerCommand('spotify.playTrack', (...args) => {
+        if (args.length === 2 && typeof args[0] === 'number') {
+            actionsCreator.playTrack(args[0], args[1]);
+        } else {
+            // fallback: show error or ignore
+            showInformationMessage('Invalid arguments for spotify.playTrack: ' + JSON.stringify(args));
+        }
         sC.queryStatusFunc();
     });
     const seekTo = commands.registerCommand('spotify.seekTo', (seekToMs: string) => {
         actionsCreator.seekTo(seekToMs);
+    });
+
+    const skipForward = commands.registerCommand('spotify.skipForward', (seconds: number = 15) => {
+        actionsCreator.skipForward(seconds);
+    });
+
+    const skipBack = commands.registerCommand('spotify.skipBack', (seconds: number = 15) => {
+        actionsCreator.skipBack(seconds);
     });
 
     return Disposable.from(lyrics,
@@ -65,6 +79,12 @@ export function createCommands(sC: SpotifyClient): { dispose: () => void } {
         trackInfoClick,
         playTrack,
         seekTo,
+        skipForward,
+        skipBack,
         lC.registration
     );
+}
+
+function showInformationMessage(arg0: string) {
+    window.showInformationMessage(arg0);
 }

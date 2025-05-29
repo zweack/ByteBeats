@@ -1,8 +1,9 @@
 {
-  "name": "vscode-spotify",
-  "description": "Use Spotify inside vscode.",
-  "version": "3.2.1",
-  "publisher": "shyykoserhiy",
+  "name": "bytebeats",
+  "displayName": "ByteBeats",
+  "description": "Control Spotify inside VS Code.",
+  "version": "1.0.0",
+  "publisher": "zweack",
   "license": "MIT",
   "engines": {
     "vscode": "^1.49.0"
@@ -14,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ShyykoSerhiy/vscode-spotify.git"
+    "url": "https://github.com/zweack/ByteBeats.git"
   },
   "categories": [
     "Other"
@@ -26,25 +27,28 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "vscode-spotify",
-          "title": "vscode-spotify",
+          "id": "bytebeats",
+          "title": "ByteBeats",
           "icon": "resources/dark/logo.svg"
         }
       ]
     },
     "views": {
-      "vscode-spotify": [
+      "bytebeats": [
         {
-          "id": "vscode-spotify-playlists",
-          "name": "Playlists"
+          "id": "bytebeats-playlists",
+          "name": "Playlists",
+          "icon": "resources/dark/logo.svg"
         },
         {
-          "id": "vscode-spotify-albums",
-          "name": "Albums"
+          "id": "bytebeats-albums",
+          "name": "Albums",
+          "icon": "resources/dark/logo.svg"
         },
         {
-          "id": "vscode-spotify-tracks",
-          "name": "Tracks"
+          "id": "bytebeats-tracks",
+          "name": "Tracks",
+          "icon": "resources/dark/logo.svg"
         }
       ]
     },
@@ -56,6 +60,14 @@
       {
         "command": "spotify.previous",
         "title": "Spotify Play Previous Song"
+      },
+      {
+        "command": "spotify.skipForward",
+        "title": "Spotify Skip Forward 15 seconds"
+      },
+      {
+        "command": "spotify.skipBack",
+        "title": "Spotify Skip Back 15 seconds"
       },
       {
         "command": "spotify.play",
@@ -140,6 +152,10 @@
       {
         "command": "spotify.seekTo",
         "title": "Spotify Seek To"
+      },
+      {
+        "command": "spotify.playTrack",
+        "title": "Spotify: Play Track"
       }
     ],
     "keybindings": [
@@ -168,24 +184,24 @@
       "view/title": [
         {
           "command": "spotify.loadPlaylists",
-          "when": "view == vscode-spotify-playlists",
+          "when": "view == bytebeats-playlists",
           "group": "navigation"
         },
         {
           "command": "spotify.loadAlbums",
-          "when": "view == vscode-spotify-albums",
+          "when": "view == bytebeats-albums",
           "group": "navigation"
         },
         {
           "command": "spotify.loadTracks",
-          "when": "view == vscode-spotify-tracks",
+          "when": "view == bytebeats-tracks",
           "group": "navigation"
         }
       ]
     },
     "configuration": {
       "type": "object",
-      "title": "vscode-spotify configuration",
+      "title": "bytebeats configuration",
       "properties": {
         "spotify.trackInfoFormat": {
           "type": "string",
@@ -207,10 +223,20 @@
           "default": true,
           "description": "Whether to show next button."
         },
+        "spotify.showSkipForwardButton": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to show skip forward button."
+        },
         "spotify.showPreviousButton": {
           "type": "boolean",
           "default": true,
           "description": "Whether to show previous button."
+        },
+        "spotify.showSkipBackButton": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to show skip backward button."
         },
         "spotify.showPlayButton": {
           "type": "boolean",
@@ -290,22 +316,32 @@
         "spotify.priorityBase": {
           "type": "number",
           "default": 30,
-          "description": "Base value of priority for all vscode-spotify elements in Status Bar(priority = basePriority+priority). This is done to avoid 'conflicts' with other extensions. "
+          "description": "Base value of priority for all bytebeats elements in Status Bar(priority = basePriority+priority). This is done to avoid 'conflicts' with other extensions. "
+        },
+        "spotify.skipForwardButtonPriority": {
+          "type": "number",
+          "default": 6,
+          "description": "Priority of skip forward button."
         },
         "spotify.nextButtonPriority": {
           "type": "number",
-          "default": 8,
+          "default": 7,
           "description": "Priority of next button."
-        },
-        "spotify.previousButtonPriority": {
-          "type": "number",
-          "default": 10,
-          "description": "Priority of previous button."
         },
         "spotify.playButtonPriority": {
           "type": "number",
-          "default": 7,
+          "default": 8,
           "description": "Priority of play button."
+        },
+        "spotify.previousButtonPriority": {
+          "type": "number",
+          "default": 9,
+          "description": "Priority of previous button."
+        },
+        "spotify.skipBackButtonPriority": {
+          "type": "number",
+          "default": 10,
+          "description": "Priority of skip backward button."
         },
         "spotify.pauseButtonPriority": {
           "type": "number",
@@ -432,7 +468,8 @@
     "vscode-test": "^1.4.0"
   },
   "dependencies": {
-    "@vscodespotify/spotify-common": "1.4.1",
+    "@vscode/test-electron": "^2.5.2",
+    "@vscodespotify/spotify-common": "github:zweack/spotify-common",
     "autobind-decorator": "^2.1.0",
     "cheerio": "^1.0.0-rc.3",
     "child_process": "^1.0.2",

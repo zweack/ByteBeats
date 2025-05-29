@@ -41,9 +41,9 @@ type V3SongsResponse = {
 export class LyricsController {
     private static lyricsContentProvider = new TextContentProvider();
 
-    readonly registration = workspace.registerTextDocumentContentProvider('vscode-spotify', LyricsController.lyricsContentProvider);
+    readonly registration = workspace.registerTextDocumentContentProvider('bytebeats', LyricsController.lyricsContentProvider);
 
-    private readonly previewUri = Uri.parse('vscode-spotify://authority/vscode-spotify');
+    private readonly previewUri = Uri.parse('bytebeats://authority/bytebeats');
 
     async findLyrics() {
         window.withProgress({ location: ProgressLocation.Window, title: 'Searching for lyrics. This might take a while.' }, () =>
@@ -97,7 +97,7 @@ export class LyricsController {
                 const lyrics = $('.lyrics').text().trim();
                 await this._previewLyrics(`${artist} - ${name}\n\n${lyrics}`);
             }
-            catch (e) {
+            catch (e:any) {
                 if (e.status === 403) {
                     // probably captcha. Open in browser
                     await env.openExternal(Uri.parse(geniusUrl));
@@ -110,7 +110,7 @@ export class LyricsController {
                     await this._previewLyrics(`Error: ${e.responseText}`);
                 }
             }
-        } catch (e) {
+        } catch (e:any) {
             if (e.status === 404) {
                 await this._previewLyrics(`Song lyrics for ${artist} - ${name} not found.\nYou can add it on https://genius.com/ .`);
             }

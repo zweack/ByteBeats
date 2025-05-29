@@ -7,17 +7,22 @@ import { Album, Playlist, Track } from '../state/state';
 import { getState, getStore } from '../store/store';
 
 const createTrackTreeItem = (t: Track, playlistOrAlbum: Playlist | Album, trackIndex: number) =>
-    new TrackTreeItem(t, vscode.TreeItemCollapsibleState.None, {
-        command: 'spotify.playTrack',
-        title: 'Play track',
-        arguments: [trackIndex, playlistOrAlbum]
-    });
+    new TrackTreeItem(t, trackIndex, playlistOrAlbum);
 
 export const connectTrackTreeView = (view: vscode.TreeView<Track>) =>
     vscode.Disposable.from(
         view.onDidChangeSelection(e => {
             const track = e.selection[0];
             actionsCreator.selectTrackAction(track);
+            // Also trigger playTrack command with correct arguments
+            const provider = (view as any).treeDataProvider as TreeTrackProvider;
+            if (provider && provider.selectedList && track) {
+                const tracks = provider.tracks;
+                const offset = tracks.findIndex(t => t.track.id === track.track.id);
+                if (offset !== -1) {
+                    vscode.commands.executeCommand('spotify.playTrack', offset, provider.selectedList);
+                }
+            }
         }),
         view.onDidChangeVisibility(e => {
             if (e.visible) {
@@ -40,8 +45,8 @@ export class TreeTrackProvider implements vscode.TreeDataProvider<Track> {
     readonly onDidChangeTreeDataEmitter: vscode.EventEmitter<Track | undefined> = new vscode.EventEmitter<Track | undefined>();
     readonly onDidChangeTreeData: vscode.Event<Track | undefined> = this.onDidChangeTreeDataEmitter.event;
 
-    private tracks: Track[] = [];
-    private selectedList?: Playlist | Album;
+    public tracks: Track[] = [];
+    public selectedList?: Playlist | Album;
     private selectedTrack?: Track;
     private view!: vscode.TreeView<Track>;
 
@@ -101,22 +106,28 @@ export class TreeTrackProvider implements vscode.TreeDataProvider<Track> {
 const getArtists = (track: Track) =>
     track.track.artists.map(a => a.name).join(', ');
 class TrackTreeItem extends vscode.TreeItem {
+    constructor(
+        public readonly track: Track,
+        public readonly offset: number,
+        public readonly list: Playlist | Album
+    ) {
+        super(track.track.name, vscode.TreeItemCollapsibleState.None);
+        this.command = {
+            command: 'spotify.playTrack',
+            title: 'Play Track',
+            arguments: [offset, list]
+        };
+    }
+
     // @ts-ignore
     get tooltip(): string {
         return `${getArtists(this.track)} - ${this.track.track.album.name} - ${this.track.track.name}`;
     }
 
     iconPath = {
-        light: path.join(__filename, '..', '..', '..', 'resources', 'light', 'track.svg'),
-        dark: path.join(__filename, '..', '..', '..', 'resources', 'dark', 'track.svg')
+        light: vscode.Uri.file(path.join(__dirname, '..', '..', '..', 'resources', 'light', 'track.svg')),
+        dark: vscode.Uri.file(path.join(__dirname, '..', '..', '..', 'resources', 'dark', 'track.svg'))
     };
 
     contextValue = 'track';
-    constructor(
-        private readonly track: Track,
-        readonly collapsibleState: vscode.TreeItemCollapsibleState,
-        readonly command?: vscode.Command
-    ) {
-        super(`${getArtists(track)} - ${track.track.name}`, collapsibleState);
-    }
 }

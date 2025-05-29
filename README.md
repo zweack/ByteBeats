@@ -1,28 +1,25 @@
-[![Latest Release](https://vsmarketplacebadge.apphb.com/version-short/shyykoserhiy.vscode-spotify.svg)](https://marketplace.visualstudio.com/items?itemName=shyykoserhiy.vscode-spotify)
-[![Installs](https://vsmarketplacebadge.apphb.com/installs/shyykoserhiy.vscode-spotify.svg)](https://marketplace.visualstudio.com/items?itemName=shyykoserhiy.vscode-spotify)
-[![Rating](https://vsmarketplacebadge.apphb.com/rating-short/shyykoserhiy.vscode-spotify.svg)](https://marketplace.visualstudio.com/items?itemName=shyykoserhiy.vscode-spotify#review-details)
-
-# vscode-spotify
-
-[![All Contributors](https://img.shields.io/badge/all_contributors-15-orange.svg?style=flat)](#contributors)
-
+# ByteBeats
 Use Spotify inside vscode.
 Provides integration with Spotify Desktop client. 
 
-Note that some of the functionalities are only available on macOS systems (see [How it works section](#how-it-works))
+<hr>
+
+Note: ByteBeats is an active fork of [vscode-spotify](https://github.com/ShyykoSerhiy/vscode-spotify). Credits to original authors and contributors. Any suggestions and PRs are most welcome. 
+
+<hr>
 
 **This extension requires Spotify Premium to work on Windows**
 
 ## How it works
 
-* On macOS, this extension uses [spotify-node-applescript](https://github.com/andrehaveman/spotify-node-applescript) (basically a wrapper for the official Spotify AppleScript API) to communicate with Spotify.
-* On Windows, the extension uses the Spotify Web API. 
-* On Linux, it uses a combination of dbus and pactl.
+- On macOS, this extension uses [spotify-node-applescript](https://github.com/andrehaveman/spotify-node-applescript) (basically a wrapper for the official Spotify AppleScript API) to communicate with Spotify.
+- On Windows, the extension uses the Spotify Web API. 
+- On Linux, it uses a combination of dbus and pactl.
 
 Spotify Web API implementation can be used on any platform, but it does have some drawbacks:
-* It doesn't work without internet connection (Linux and OS X implementations do).
-* Full functionality is only available to Spotify Premium users. 
-* API calls are rate limited.
+- It doesn't work without internet connection (Linux and OS X implementations do).
+- Full functionality is only available to Spotify Premium users. 
+- API calls are rate limited.
 
 At the same time it provides tighter integration and it's more or less future proofed.
 
@@ -57,9 +54,9 @@ Additional Web API features:
 * Playlists/tracks selection. *Make sure you have logged in with the command `>Spotify Sign In` to use these features. You can open the Virtual Studio Code command line with the hotkey `Ctrl+P` by default.*
 
 ## Contributing 
-This project follows the [all-contributors](https://github.com/kentcdodds/all-contributors) specification. Contributions of any kind are welcome, any contributions made will be recognised in the README.
+Contributions of any kind are welcome, any contributions made will be recognised in the README.
 
-A list of contributors to this project ([emoji key](https://github.com/kentcdodds/all-contributors#emoji-key)):
+### Contributors from Original Project
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->

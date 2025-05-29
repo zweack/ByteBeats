@@ -21,7 +21,9 @@ export function createDisposableAuthSever() {
             app.get('/callback', (request, response) => {
                 const { access_token: accessToken, refresh_token: refreshToken, error } = request.query;
                 if (!error) {
-                    res({ accessToken, refreshToken });
+                    let aT = accessToken as string
+                    let rT = refreshToken as string
+                    res({ accessToken: aT, refreshToken: rT });
                 } else {
                     rej(error);
                 }

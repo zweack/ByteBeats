@@ -65,3 +65,4 @@ out
 
 # built vscode extension
 *.vsix
+package-lock.json

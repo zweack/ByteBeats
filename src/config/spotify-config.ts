@@ -14,7 +14,8 @@ export function isWebApiSpotifyClient() {
 }
 
 export function isButtonToBeShown(buttonId: string): boolean {
-    const shouldShow = getConfig().get(`show${buttonId[0].toUpperCase()}${buttonId.slice(1)}`, false);
+    const configKey = 'show' + buttonId.charAt(0).toUpperCase() + buttonId.slice(1);
+    const shouldShow = getConfig().get<boolean>(configKey, true);
     const { loginState } = getState();
 
     if (buttonId === `${BUTTON_ID_SIGN_IN}Button`) {

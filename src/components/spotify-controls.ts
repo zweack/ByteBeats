@@ -92,17 +92,24 @@ export class SpotifyControls {
             { id: 'toggleShuffling', text: '$(git-branch)', dynamicColor: (isShuffling?: boolean) => isShuffling ? 'white' : 'darkgrey' },
             { id: 'lyrics', text: '$(book)' },
             { id: BUTTON_ID_SIGN_IN, text: '$(sign-in)' },
-            { id: BUTTON_ID_SIGN_OUT, text: '$(sign-out)' }
+            { id: BUTTON_ID_SIGN_OUT, text: '$(sign-out)' },
+            { id: 'skipForward', text: '$(debug-step-over)' },
+            { id: 'skipBack', text: '$(debug-step-back)' }
         ];
-        const extension = extensions.getExtension('shyykoserhiy.vscode-spotify');
+        const extension = extensions.getExtension('zweack.bytebeats');
         if (!extension) {
             this._buttons = [];
             return;
         }
         const commands: { command: string, title: string }[] = extension.packageJSON.contributes.commands;
+        const commandMap: Record<string, string> = {
+            signIn: 'spotify.signIn',
+            signOut: 'spotify.signOut'
+        };
         this._buttons = buttonsInfo.map(item => {
             const buttonName = item.id + 'Button';
-            const buttonCommand = 'spotify.' + item.id;
+            // Use mapped command if present, otherwise default to 'spotify.' + item.id
+            const buttonCommand = commandMap[item.id] || ('spotify.' + item.id);
             const buttonPriority = getButtonPriority(buttonName);
             const visible = isButtonToBeShown(buttonName);
             const statusBarItem = window.createStatusBarItem(StatusBarAlignment.Left, buttonPriority);
@@ -136,6 +143,7 @@ export class SpotifyControls {
             }
             if (button.id === BUTTON_ID_SIGN_OUT) {
                 this._signOutButton = button;
+                return;
             }
         });
     }
@@ -153,15 +161,31 @@ export class SpotifyControls {
     }
 
     showHideAuthButtons() {
-        this._hideShowButton(this._signInButton);
-        this._hideShowButton(this._signOutButton);
+        if (this._signInButton) {
+            this._hideShowButton(this._signInButton);
+        } else {
+            // Optionally log or handle missing sign-in button
+        }
+        if (this._signOutButton) {
+            this._hideShowButton(this._signOutButton);
+        } else {
+            // Optionally log or handle missing sign-out button
+        }
     }
 
     /**
     * Show buttons that are visible
     */
     showVisible() {
-        this.buttons.forEach(button => button.visible && button.statusBarItem.show());
+        this.buttons.forEach(button => {
+            if (!button) return;
+            button.visible = isButtonToBeShown(button.buttonName);
+            if (button.visible) {
+                button.statusBarItem.show();
+            } else {
+                button.statusBarItem.hide();
+            }
+        });
     }
 
     /**
@@ -169,6 +193,7 @@ export class SpotifyControls {
      */
     hideAll() {
         this.buttons.forEach(button => {
+            if (!button) return;
             if (button === this._signInButton || button === this._signOutButton) {
                 return;
             }
@@ -180,9 +205,10 @@ export class SpotifyControls {
     * Disposes all the buttons
     */
     dispose() {
-        this.buttons.forEach(button => { button.statusBarItem.dispose(); });
+        this.buttons.forEach(button => { if (button) button.statusBarItem.dispose(); });
     }
-    private _hideShowButton(button: Button) {
+    private _hideShowButton(button: Button | undefined) {
+        if (!button) return;
         button.visible = isButtonToBeShown(button.buttonName);
         button.visible ? button.statusBarItem.show() : button.statusBarItem.hide();
     }

@@ -36,7 +36,7 @@ export function withApi() {
     return (_target: any, _key: any, descriptor: PropertyDescriptor) => {
         const originalMethod = descriptor.value;
 
-        descriptor.value = function(...args: any[]) {
+        descriptor.value = function (...args: any[]) {
             const api = getSpotifyWebApi();
             if (api) {
                 return originalMethod.apply(this, [...args, api]);
@@ -62,8 +62,18 @@ export function withErrorAsync() {
         descriptor.value = async function (...args: any[]) {
             try {
                 return await originalMethod.apply(this, args);
-            } catch (e) {
-                showWarningMessage('Failed to perform operation ' + e.message || e);
+            } catch (e: any) {
+                if (e.message && e.message.includes('invalid json response body')) {
+                    return;
+                }
+                if (
+                    (e.message && e.message.includes('Restriction violated')) ||
+                    (e.status === 403 && e.body && e.body.error && e.body.error.reason === 'UNKNOWN')
+                ) {
+                    showWarningMessage('Spotify cannot perform this action due to account or device restrictions.');
+                    return;
+                }
+                showWarningMessage('Failed to perform operation ' + (e.message || e));
             }
         };
 
@@ -91,17 +101,20 @@ function asyncActionCreator() {
     return (_target: any, _key: any, descriptor: PropertyDescriptor) => {
         const originalMethod = descriptor.value;
 
-        descriptor.value = async function(...args: any[]) {
-            let action;
-            try {
-                action = await originalMethod.apply(this, args);
-                if (!action) {
+        descriptor.value = function (...args: any[]) {
+            (async () => {
+                let action;
+                try {
+                    action = await originalMethod.apply(this, args);
+                    if (!action) {
+                        return;
+                    }
+                } catch (e: any) {
+                    showWarningMessage('Failed to perform operation ' + (e.message || e));
                     return;
                 }
-            } catch (e) {
-                showWarningMessage('Failed to perform operation ' + e.message || e);
-            }
-            getStore().dispatch(action);
+                getStore().dispatch(action);
+            })();
         };
 
         return descriptor;
@@ -122,7 +135,10 @@ export const getSpotifyWebApi = () => {
     let api = apiMap.get(loginState);
     if (!api) {
         api = getApi(getAuthServerUrl(), loginState.accessToken, loginState.refreshToken, (token: string) => {
+            // Update the store with the new access token and refresh the API instance
             actionsCreator._actionSignIn(token, loginState.refreshToken);
+            // Remove old API instance and create a new one with updated token
+            apiMap.delete(loginState);
         });
         apiMap.set(loginState, api);
     }
@@ -286,14 +302,14 @@ class ActionCreator {
         }
         let minutes = 0;
         let seconds = 0;
-        if (timeA[1]){
+        if (timeA[1]) {
             minutes = parseFloat(timeA[0]);
             seconds = parseFloat(timeA[1]);
         } else {
             seconds = parseFloat(timeA[0]);
         }
 
-        if (Number.isNaN(seconds) || Number.isNaN(minutes)){
+        if (Number.isNaN(seconds) || Number.isNaN(minutes)) {
             showErrorMessage(invalidTimeFormatError);
             return;
         }
@@ -304,8 +320,30 @@ class ActionCreator {
     }
 
     @autobind
+    @withErrorAsync()
+    @withApi()
+    async skipForward(seconds: number, api?: Api): Promise<void> {
+        const state = getState();
+        const currentPosition = state.playerState.position;
+        // currentPosition is already in milliseconds
+        const seekTo = currentPosition + (seconds * 1000);
+        await api!.player.seek.put(seekTo);
+    }
+
+    @autobind
+    @withErrorAsync()
+    @withApi()
+    async skipBack(seconds: number, api?: Api): Promise<void> {
+        const state = getState();
+        const currentPosition = state.playerState.position;
+        // currentPosition is already in milliseconds
+        const seekTo = Math.max(currentPosition - (seconds * 1000), 0);
+        await api!.player.seek.put(seekTo);
+    }
+
+    @autobind
     actionSignIn() {
-        commands.executeCommand('vscode.open', Uri.parse(`${getAuthServerUrl()}/login`)).then(() => {
+        Promise.resolve(commands.executeCommand('vscode.open', Uri.parse(`${getAuthServerUrl()}/login`))).then(() => {
             const { createServerPromise, dispose } = createDisposableAuthSever();
             createServerPromise.then(({ accessToken, refreshToken }) => {
                 this._actionSignIn(accessToken, refreshToken);
@@ -314,6 +352,8 @@ class ActionCreator {
             }).then(() => {
                 dispose();
             });
+        }).catch(e => {
+            showErrorMessage(`Failed to open login URL: ${e.message || e}`);
         });
     }
 

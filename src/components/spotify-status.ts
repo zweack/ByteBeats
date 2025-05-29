@@ -32,7 +32,6 @@ export class SpotifyStatus {
         }
         if (!this._spotifyControls) {
             this._spotifyControls = new SpotifyControls();
-            this._spotifyControls.showVisible();
         }
         if (this.loginState !== state.loginState) {
             this.loginState = state.loginState;
@@ -43,17 +42,16 @@ export class SpotifyStatus {
             const { state: playing, volume, isRepeating, isShuffling } = state.playerState;
             const text = this.formattedTrackInfo(state.track);
             let toRedraw = false;
-            if (text !== this._statusBarItem.text) {// we need this guard to prevent flickering
+            if (text !== this._statusBarItem.text) {
                 this._statusBarItem.text = text;
                 toRedraw = true;
             }
             if (this._spotifyControls.updateDynamicButtons(playing === 'playing', volume === 0, isRepeating, isShuffling)) {
                 toRedraw = true;
             }
-            if (toRedraw) {
-                this._statusBarItem.show();
-                this._spotifyControls.showVisible();
-            }
+            // Always show controls, not just on redraw
+            this._statusBarItem.show();
+            this._spotifyControls.showVisible();
             const trackInfoClickBehaviour = getTrackInfoClickBehaviour();
             if (trackInfoClickBehaviour === 'none') {
                 this._statusBarItem.command = undefined;
@@ -61,8 +59,9 @@ export class SpotifyStatus {
                 this._statusBarItem.command = 'spotify.trackInfoClick';
             }
         } else {
-            this._statusBarItem.text = '';
-            this._statusBarItem.hide();
+            this._statusBarItem.text = '$(debug-pause) Not Playing';
+            this._statusBarItem.command = undefined;
+            this._statusBarItem.show();
             this._spotifyControls.hideAll();
         }
     }
