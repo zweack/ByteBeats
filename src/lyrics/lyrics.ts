@@ -94,7 +94,46 @@ export class LyricsController {
                     url: geniusUrl
                 });
                 const $ = cheerio.load(fetchRes.responseText);
-                const lyrics = $('.lyrics').text().trim();
+                
+                let lyricsText = "";
+
+                // Lyrics on Genius are typically found within 'div[data-lyrics-container="true"]'.
+                $('div[data-lyrics-container="true"]').each(
+                    (_i, containerElement) => {
+                        $(containerElement)
+                            .contents()
+                            .each((_j, node) => {
+                                if (node.type === "text") {
+                                    // Text nodes (e.g., "[Verse 1]", "[Chorus]", etc.)
+                                    lyricsText += $(node).text();
+                                } else if (node.type === "tag") {
+                                    const element = $(node);
+                                    if (element.is("br")) {
+                                        // <br> tags are treated as newlines.
+                                        lyricsText += "\n";
+                                    } else if (element.is('a[class^="ReferentFragment-desktop__ClickTarget-"]')) {
+                                        // Each line of lyrics is often an 'a' tag with a specific class.
+                                        // Get the text from the 'span' tag used for highlighting within it.
+                                        const lineText = element
+                                            .find('span[class^="ReferentFragment-desktop__Highlight-"]')
+                                            .text();
+                                        lyricsText += lineText;
+                                    }
+                                }
+                            });
+                        // If there are multiple lyrics container blocks, add a separator between them.
+                        lyricsText += "\n\n";
+                    }
+                );
+
+                // Additional Formatting
+                const lyrics = lyricsText
+                    .split("\n")
+                    .map((line) => line.trim())
+                    .join("\n")
+                    .replace(/\n\n\n+/g, "\n\n")
+                    .trim();
+                
                 await this._previewLyrics(`${artist} - ${name}\n\n${lyrics}`);
             }
             catch (e:any) {
