@@ -1,4 +1,4 @@
-import { Playlist, Track, Album } from '@vscodespotify/spotify-common/lib/spotify/consts';
+import { Playlist, Track, Album, SearchResultItem } from '@vscodespotify/spotify-common/lib/spotify/consts';
 import { Map } from 'immutable';
 
 export { Playlist, Track, Album };
@@ -69,6 +69,8 @@ export interface ISpotifyStatusState extends ISpotifyStatusStatePartial {
      */
     tracks: Map<Playlist['id'], Track[]>;
     selectedTrack: Track | null;
+    searchResults: { items: { type: 'album' | 'playlist' | 'track', data: any }[] };
+    searchQuery: string;
 }
 
 export const DUMMY_PLAYLIST: Playlist = {
@@ -128,5 +130,9 @@ export const DEFAULT_STATE: ISpotifyStatusState = {
     albums: [],
     selectedList: undefined,
     tracks: Map(),
-    selectedTrack: null
+    selectedTrack: null,
+    searchResults: {
+        items: []
+    },
+    searchQuery: ''
 };

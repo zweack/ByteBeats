@@ -49,6 +49,11 @@
           "id": "bytebeats-tracks",
           "name": "Tracks",
           "icon": "resources/dark/logo.svg"
+        },
+        {
+          "id": "bytebeats-search",
+          "name": "Search",
+          "icon": "resources/dark/logo.svg"
         }
       ]
     },
@@ -156,6 +161,14 @@
       {
         "command": "spotify.playTrack",
         "title": "Spotify: Play Track"
+      },
+      {
+        "command": "spotify.search",
+        "title": "Search Spotify",
+        "icon": {
+          "light": "resources/light/search.svg",
+          "dark": "resources/dark/search.svg"
+        }
       }
     ],
     "keybindings": [
@@ -180,7 +193,7 @@
         "mac": "cmd+shift+;"
       }
     ],
-    "menus": {
+      "menus": {
       "view/title": [
         {
           "command": "spotify.loadPlaylists",
@@ -195,6 +208,11 @@
         {
           "command": "spotify.loadTracks",
           "when": "view == bytebeats-tracks",
+          "group": "navigation"
+        },
+        {
+          "command": "spotify.search",
+          "when": "view == bytebeats-search",
           "group": "navigation"
         }
       ]

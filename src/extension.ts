@@ -5,6 +5,7 @@ import { SpotifyStatus } from './components/spotify-status';
 import { connectPlaylistTreeView, TreePlaylistProvider } from './components/tree-playlists';
 import { connectAlbumTreeView, TreeAlbumProvider } from './components/tree-albums';
 import { connectTrackTreeView, TreeTrackProvider } from './components/tree-track';
+import { connectSearchTreeView, TreeSearchProvider } from './components/tree-search';
 import { registerGlobalState } from './config/spotify-config';
 import { SpotifyStatusController } from './spotify-status-controller';
 import { SpoifyClientSingleton } from './spotify/spotify-client';
@@ -22,11 +23,14 @@ export function activate(context: ExtensionContext) {
     const albumTreeView = window.createTreeView('bytebeats-albums', { treeDataProvider: new TreeAlbumProvider() });
     const treeTrackProvider = new TreeTrackProvider();
     const trackTreeView = window.createTreeView('bytebeats-tracks', { treeDataProvider: treeTrackProvider });
+    const treeSearchProvider = new TreeSearchProvider();
+    const searchTreeView = window.createTreeView('bytebeats-search', { treeDataProvider: treeSearchProvider });
     treeTrackProvider.bindView(trackTreeView);
     // Add to a list of disposables which are disposed when this extension is deactivated.
     context.subscriptions.push(connectPlaylistTreeView(playlistTreeView));
     context.subscriptions.push(connectAlbumTreeView(albumTreeView));
     context.subscriptions.push(connectTrackTreeView(trackTreeView));
+    context.subscriptions.push(connectSearchTreeView(searchTreeView));
     context.subscriptions.push(controller);
     context.subscriptions.push(spotifyStatus);
     context.subscriptions.push(playlistTreeView);

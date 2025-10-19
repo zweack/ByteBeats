@@ -2,11 +2,12 @@ import { Api, getApi } from '@vscodespotify/spotify-common/lib/spotify/api';
 import { Album, Playlist, Track } from '@vscodespotify/spotify-common/lib/spotify/consts';
 import autobind from 'autobind-decorator';
 import { commands, Uri, window } from 'vscode';
+import { SearchItem } from '../components/tree-search';
 
 import { createDisposableAuthSever } from '../auth/server/local';
 import { getAuthServerUrl } from '../config/spotify-config';
 import { SIGN_IN_COMMAND } from '../consts/consts';
-import { log, showInformationMessage, showWarningMessage, showErrorMessage } from '../info/info';
+import { log, showInformationMessage, showWarningMessage, showErrorMessage, showOutput } from '../info/info';
 import { isAlbum } from '../isAlbum';
 import { DUMMY_PLAYLIST, ILoginState, ISpotifyStatusState } from '../state/state';
 import { getState, getStore } from '../store/store';
@@ -71,6 +72,13 @@ export function withErrorAsync() {
                     (e.status === 403 && e.body && e.body.error && e.body.error.reason === 'UNKNOWN')
                 ) {
                     showWarningMessage('Spotify cannot perform this action due to account or device restrictions.');
+                    return;
+                }
+                if (
+                    (e.message && e.message.includes('No active device')) ||
+                    (e.status === 404 && e.body && e.body.error && e.body.error.reason === 'NO_ACTIVE_DEVICE')
+                ) {
+                    showWarningMessage('Could not find any active Spotify session. Please start Spotify app or web player');
                     return;
                 }
                 showWarningMessage('Failed to perform operation ' + (e.message || e));
@@ -372,6 +380,117 @@ class ActionCreator {
     actionSignOut(): SignOutAction {
         return {
             type: SIGN_OUT_ACTION
+        };
+    }
+
+    @autobind
+    @withErrorAsync()
+    @withApi()
+    async search(api?: Api): Promise<void> {
+        const query = await window.showInputBox({
+            placeHolder: 'Search for tracks, albums, or playlists...',
+            prompt: 'Enter search query'
+        });
+
+        if (!query) {
+            return;
+        }
+
+        showOutput(); // Show the output panel after user enters query
+
+        log('search', 'Searching for:', query);
+        const results = await api!.search.get(query, ['track', 'album', 'playlist']);
+        log('search', 'Raw API results:', JSON.stringify(results, null, 2));
+        
+        const searchResults: SearchItem[] = [];
+
+        if (results.tracks?.items) {
+            log('search', 'Processing tracks:', results.tracks.items.length);
+            for (const item of results.tracks.items) {
+                try {
+                    log('search', 'Processing track:', item.track?.name);
+                    if (!item.track) {
+                        log('search', 'Skipping track - missing track data');
+                        continue;
+                    }
+                    searchResults.push({
+                        type: 'track' as const,
+                        data: {
+                            id: item.track.id,
+                            name: item.track.name,
+                            artists: item.track.artists.map(a => ({
+                                name: a.name,
+                                id: a.id,
+                                uri: a.uri
+                            })),
+                            uri: item.track.uri
+                        }
+                    });
+                } catch (err) {
+                    log('search', 'Error processing track:', err);
+                }
+            }
+        }
+        
+        if (results.albums?.items) {
+            log('search', 'Processing albums:', results.albums.items.length);
+            for (const item of results.albums.items) {
+                try {
+                    log('search', 'Processing album:', item.album?.name);
+                    if (!item.album) {
+                        log('search', 'Skipping album - missing album data');
+                        continue;
+                    }
+                    searchResults.push({
+                        type: 'album' as const, 
+                        data: {
+                            id: item.album.id,
+                            name: item.album.name,
+                            artists: item.album.artists.map(a => ({
+                                name: a.name,
+                                id: a.id,
+                                uri: a.uri
+                            })),
+                            uri: item.album.uri
+                        }
+                    });
+                } catch (err) {
+                    log('search', 'Error processing album:', err);
+                }
+            }
+        }
+
+        if (results.playlists?.items) {
+            log('search', 'Processing playlists:', results.playlists.items.length);
+            for (const playlist of results.playlists.items) {
+                try {
+                    log('search', 'Processing playlist:', playlist.name);
+                    searchResults.push({ type: 'playlist' as const, data: playlist });
+                } catch (err) {
+                    log('search', 'Error processing playlist:', err);
+                }
+            }
+        }
+
+        log('search', 'Final searchResults length:', searchResults.length);
+        
+        getStore().dispatch({
+            type: 'SEARCH_RESULTS_ACTION' as const,
+            results: searchResults
+        });
+
+        log('search', 'Final processed results:', JSON.stringify(searchResults, null, 2));        getStore().dispatch({
+            type: 'SEARCH_RESULTS_ACTION' as const,
+            results: searchResults
+        });
+    }
+
+    @autobind
+    @actionCreator()
+    updateSearchQuery(query: string) {
+        return {
+            type: 'UPDATE_SEARCH_QUERY_ACTION' as const,
+            query
         };
     }
 }
