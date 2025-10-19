@@ -1,6 +1,6 @@
 import { Album, Playlist, Track } from '@vscodespotify/spotify-common/lib/spotify/consts';
 import { ISpotifyStatusState } from '../state/state';
-import { SearchItem } from '../components/tree-search';
+import { SearchResultItem } from '../components/tree-search';
 
 export const UPDATE_STATE_ACTION = 'UPDATE_STATE_ACTION' as 'UPDATE_STATE_ACTION';
 export const SIGN_IN_ACTION = 'SIGN_IN_ACTION' as 'SIGN_IN_ACTION';
@@ -62,7 +62,8 @@ export interface SelectTrackAction {
 
 export interface SearchResultsAction {
     type: typeof SEARCH_RESULTS_ACTION;
-    results: SearchItem[];
+    results: SearchResultItem[];
+    query: string;
 }
 
 export interface UpdateSearchQueryAction {

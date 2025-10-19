@@ -1,6 +1,6 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { Album, Playlist, Track, SearchResultItem } from '@vscodespotify/spotify-common/src/spotify/consts';
+import { Album, Playlist, Track } from '@vscodespotify/spotify-common/src/spotify/consts';
 import { getState, getStore } from '../store/store';
 import { actionsCreator } from '../actions/actions';
 
@@ -14,6 +14,8 @@ type SearchAlbum = {
         uri: string;
     }[];
     uri: string;
+    album_type: string;
+    total_tracks: number;
 };
 
 type SearchTrack = {
@@ -25,26 +27,43 @@ type SearchTrack = {
         uri: string;
     }[];
     uri: string;
+    album: {
+        id: string;
+        name: string;
+    };
 };
 
-export interface SearchItem {
+export interface SearchResultItem {
     type: 'album' | 'playlist' | 'track';
     data: SearchAlbum | Playlist | SearchTrack;
 }
 
-export class TreeSearchProvider implements vscode.TreeDataProvider<SearchItem> {
-    readonly onDidChangeTreeDataEmitter: vscode.EventEmitter<SearchItem | undefined> = new vscode.EventEmitter<SearchItem | undefined>();
-    readonly onDidChangeTreeData: vscode.Event<SearchItem | undefined> = this.onDidChangeTreeDataEmitter.event;
+export interface SearchGroupItem {
+    type: 'group';
+    label: string;
+    items: SearchResultItem[];
+}
 
-    private searchResults: SearchItem[] = [];
+type TreeItem = SearchGroupItem | SearchResultItem;
+
+export class TreeSearchProvider implements vscode.TreeDataProvider<TreeItem> {
+    readonly onDidChangeTreeDataEmitter: vscode.EventEmitter<TreeItem | undefined> = new vscode.EventEmitter<TreeItem | undefined>();
+    readonly onDidChangeTreeData: vscode.Event<TreeItem | undefined> = this.onDidChangeTreeDataEmitter.event;
+
+    private searchResults: SearchResultItem[] = [];
+    private currentQuery: string = '';
 
     constructor() {
         getStore().subscribe(() => {
             const state = getState();
             const currentResults = state.searchResults?.items || [];
-            if (!this.searchResults || this.searchResults.length !== currentResults.length) {
-
-                this.searchResults = state.searchResults?.items || [];
+            const newQuery = state.searchQuery;
+            
+            if (!this.searchResults || 
+                this.searchResults.length !== currentResults.length || 
+                this.currentQuery !== newQuery) {
+                this.searchResults = currentResults;
+                this.currentQuery = newQuery;
                 this.refresh();
             }
         });
@@ -54,38 +73,87 @@ export class TreeSearchProvider implements vscode.TreeDataProvider<SearchItem> {
         this.onDidChangeTreeDataEmitter.fire(void 0);
     }
 
-    getTreeItem(item: SearchItem): vscode.TreeItem {
-        return new SearchTreeItem(item, vscode.TreeItemCollapsibleState.None);
-    }
-
-    getChildren(element?: SearchItem): Thenable<SearchItem[]> {
-        if (element) {
-            return Promise.resolve([]);
+    getTreeItem(element: TreeItem): vscode.TreeItem {
+        if (element.type === 'group') {
+            const item = new vscode.TreeItem(
+                element.label,
+                element.items.length > 0 ? vscode.TreeItemCollapsibleState.Expanded : vscode.TreeItemCollapsibleState.None
+            );
+            if (element.label.startsWith('Search Results')) {
+                item.description = `"${this.currentQuery}"`;
+            } else {
+                item.description = `${element.items.length} items`;
+            }
+            return item;
         }
-        return Promise.resolve(this.searchResults || []);
+        return new SearchResultTreeItem(element, vscode.TreeItemCollapsibleState.None);
     }
 
-    getParent(_: SearchItem) {
-        return void 0;
+    getChildren(element?: TreeItem): Thenable<TreeItem[]> {
+        if (!element) {
+            if (this.searchResults.length === 0) {
+                if (this.currentQuery) {
+                    return Promise.resolve([{
+                        type: 'group',
+                        label: 'Search Results for',
+                        items: []
+                    }]);
+                }
+                return Promise.resolve([]);
+            }
+
+            const tracks = this.searchResults.filter(r => r.type === 'track');
+            const albums = this.searchResults.filter(r => r.type === 'album');
+            const playlists = this.searchResults.filter(r => r.type === 'playlist');
+
+            return Promise.resolve([
+                {
+                    type: 'group' as const,
+                    label: `Search Results for`,
+                    items: []
+                },
+                {
+                    type: 'group' as const,
+                    label: 'Tracks',
+                    items: tracks
+                },
+                {
+                    type: 'group' as const,
+                    label: 'Albums',
+                    items: albums
+                },
+                {
+                    type: 'group' as const,
+                    label: 'Playlists',
+                    items: playlists
+                }
+            ].filter(group => group.type !== 'group' || group.items.length > 0 || group.label === 'Search Results for'));
+        }
+
+        if (element.type === 'group') {
+            return Promise.resolve(element.items);
+        }
+
+        return Promise.resolve([]);
+    }
+
+    getParent(element: TreeItem): TreeItem | undefined {
+        return undefined;
     }
 }
 
-class SearchTreeItem extends vscode.TreeItem {
-    private readonly _searchItem: SearchItem;
-    private readonly _tooltip: string;
-    private readonly _label: string;
+class SearchResultTreeItem extends vscode.TreeItem {
+    private readonly _searchItem: SearchResultItem;
 
     constructor(
-        searchItem: SearchItem,
+        searchItem: SearchResultItem,
         collapsibleState: vscode.TreeItemCollapsibleState,
         command?: vscode.Command
     ) {
-        const label = SearchTreeItem.getLabel(searchItem);
+        const label = SearchResultTreeItem.getLabel(searchItem);
         super(label, collapsibleState);
         this._searchItem = searchItem;
-        this._label = label;
-        this._tooltip = this.generateTooltip();
-        this.tooltip = this._tooltip;
+        this.tooltip = this.generateTooltip();
         this.contextValue = searchItem.type;
         this.iconPath = {
             light: vscode.Uri.file(path.join(__dirname, '..', '..', 'resources', 'light', `${searchItem.type}.svg`)),
@@ -104,10 +172,12 @@ class SearchTreeItem extends vscode.TreeItem {
             case 'track':
                 const track = this._searchItem.data as SearchTrack;
                 return `Track: ${track.name} by ${track.artists[0].name}`;
+            default:
+                return 'Unknown item type';
         }
     }
 
-    private static getLabel(item: SearchItem): string {
+    private static getLabel(item: SearchResultItem): string {
         switch (item.type) {
             case 'album':
                 const album = item.data as SearchAlbum;
@@ -118,11 +188,13 @@ class SearchTreeItem extends vscode.TreeItem {
             case 'track':
                 const track = item.data as SearchTrack;
                 return `${track.name} - ${track.artists[0].name}`;
+            default:
+                return 'Unknown item';
         }
     }
 }
 
-export const connectSearchTreeView = (view: vscode.TreeView<SearchItem>) =>
+export const connectSearchTreeView = (view: vscode.TreeView<TreeItem>) =>
     vscode.Disposable.from(
         view.onDidChangeVisibility(e => {
             if (e.visible) {

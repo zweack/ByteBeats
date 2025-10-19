@@ -2,7 +2,7 @@ import { Api, getApi } from '@vscodespotify/spotify-common/lib/spotify/api';
 import { Album, Playlist, Track } from '@vscodespotify/spotify-common/lib/spotify/consts';
 import autobind from 'autobind-decorator';
 import { commands, Uri, window } from 'vscode';
-import { SearchItem } from '../components/tree-search';
+import { SearchResultItem } from '../components/tree-search';
 
 import { createDisposableAuthSever } from '../auth/server/local';
 import { getAuthServerUrl } from '../config/spotify-config';
@@ -402,28 +402,21 @@ class ActionCreator {
         const results = await api!.search.get(query, ['track', 'album', 'playlist']);
         log('search', 'Raw API results:', JSON.stringify(results, null, 2));
         
-        const searchResults: SearchItem[] = [];
+        const searchResults: SearchResultItem[] = [];
 
         if (results.tracks?.items) {
             log('search', 'Processing tracks:', results.tracks.items.length);
-            for (const item of results.tracks.items) {
+            for (const item of results.tracks.items as any[]) {
                 try {
-                    log('search', 'Processing track:', item.track?.name);
-                    if (!item.track) {
-                        log('search', 'Skipping track - missing track data');
-                        continue;
-                    }
+                    log('search', 'Processing track:', item.name);
                     searchResults.push({
                         type: 'track' as const,
                         data: {
-                            id: item.track.id,
-                            name: item.track.name,
-                            artists: item.track.artists.map(a => ({
-                                name: a.name,
-                                id: a.id,
-                                uri: a.uri
-                            })),
-                            uri: item.track.uri
+                            id: item.id,
+                            name: item.name,
+                            artists: item.artists,
+                            uri: item.uri,
+                            album: item.album
                         }
                     });
                 } catch (err) {
@@ -434,24 +427,18 @@ class ActionCreator {
         
         if (results.albums?.items) {
             log('search', 'Processing albums:', results.albums.items.length);
-            for (const item of results.albums.items) {
+            for (const item of results.albums.items as any[]) {
                 try {
-                    log('search', 'Processing album:', item.album?.name);
-                    if (!item.album) {
-                        log('search', 'Skipping album - missing album data');
-                        continue;
-                    }
+                    log('search', 'Processing album:', item.name);
                     searchResults.push({
                         type: 'album' as const, 
                         data: {
-                            id: item.album.id,
-                            name: item.album.name,
-                            artists: item.album.artists.map(a => ({
-                                name: a.name,
-                                id: a.id,
-                                uri: a.uri
-                            })),
-                            uri: item.album.uri
+                            id: item.id,
+                            name: item.name,
+                            artists: item.artists,
+                            uri: item.uri,
+                            album_type: item.album_type,
+                            total_tracks: item.total_tracks
                         }
                     });
                 } catch (err) {
@@ -476,13 +463,11 @@ class ActionCreator {
         
         getStore().dispatch({
             type: 'SEARCH_RESULTS_ACTION' as const,
-            results: searchResults
+            results: searchResults,
+            query
         });
 
-        log('search', 'Final processed results:', JSON.stringify(searchResults, null, 2));        getStore().dispatch({
-            type: 'SEARCH_RESULTS_ACTION' as const,
-            results: searchResults
-        });
+        log('search', 'Final processed results:', JSON.stringify(searchResults, null, 2));
     }
 
     @autobind
