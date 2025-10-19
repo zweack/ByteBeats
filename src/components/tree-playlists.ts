@@ -91,5 +91,10 @@ class PlaylistTreeItem extends vscode.TreeItem {
         readonly command?: vscode.Command
     ) {
         super(playlist.name, collapsibleState);
+        this.command = {
+            command: 'spotify.playPlaylist',
+            title: 'Play Playlist',
+            arguments: [playlist]
+        };
     }
 }

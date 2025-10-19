@@ -2,11 +2,12 @@ import { Api, getApi } from '@vscodespotify/spotify-common/lib/spotify/api';
 import { Album, Playlist, Track } from '@vscodespotify/spotify-common/lib/spotify/consts';
 import autobind from 'autobind-decorator';
 import { commands, Uri, window } from 'vscode';
+import { SearchResultItem, SearchTrack, SearchAlbum } from '../components/tree-search';
 
 import { createDisposableAuthSever } from '../auth/server/local';
 import { getAuthServerUrl } from '../config/spotify-config';
 import { SIGN_IN_COMMAND } from '../consts/consts';
-import { log, showInformationMessage, showWarningMessage, showErrorMessage } from '../info/info';
+import { log, showInformationMessage, showWarningMessage, showErrorMessage, showOutput } from '../info/info';
 import { isAlbum } from '../isAlbum';
 import { DUMMY_PLAYLIST, ILoginState, ISpotifyStatusState } from '../state/state';
 import { getState, getStore } from '../store/store';
@@ -71,6 +72,13 @@ export function withErrorAsync() {
                     (e.status === 403 && e.body && e.body.error && e.body.error.reason === 'UNKNOWN')
                 ) {
                     showWarningMessage('Spotify cannot perform this action due to account or device restrictions.');
+                    return;
+                }
+                if (
+                    (e.message && e.message.includes('No active device')) ||
+                    (e.status === 404 && e.body && e.body.error && e.body.error.reason === 'NO_ACTIVE_DEVICE')
+                ) {
+                    showWarningMessage('Could not find any active Spotify session. Please start Spotify app or web player');
                     return;
                 }
                 showWarningMessage('Failed to perform operation ' + (e.message || e));
@@ -373,6 +381,149 @@ class ActionCreator {
         return {
             type: SIGN_OUT_ACTION
         };
+    }
+
+    @autobind
+    @withErrorAsync()
+    @withApi()
+    async search(api?: Api): Promise<void> {
+        const query = await window.showInputBox({
+            placeHolder: 'Search for tracks, albums, or playlists...',
+            prompt: 'Enter search query'
+        });
+
+        if (!query) {
+            return;
+        }
+
+        showOutput(); // Show the output panel after user enters query
+
+        log('search', 'Searching for:', query);
+        const results = await api!.search.get(query, ['track', 'album', 'playlist']);
+        log('search', 'Raw API results:', JSON.stringify(results, null, 2));
+        
+        const searchResults: SearchResultItem[] = [];
+
+        if (results.tracks?.items) {
+            log('search', 'Processing tracks:', results.tracks.items.length);
+            for (const item of results.tracks.items as any[]) {
+                try {
+                    log('search', 'Processing track:', item.name);
+                    searchResults.push({
+                        type: 'track' as const,
+                        data: {
+                            id: item.id,
+                            name: item.name,
+                            artists: item.artists,
+                            uri: item.uri,
+                            album: item.album
+                        }
+                    });
+                } catch (err) {
+                    log('search', 'Error processing track:', err);
+                }
+            }
+        }
+        
+        if (results.albums?.items) {
+            log('search', 'Processing albums:', results.albums.items.length);
+            for (const item of results.albums.items as any[]) {
+                try {
+                    log('search', 'Processing album:', item.name);
+                    searchResults.push({
+                        type: 'album' as const, 
+                        data: {
+                            id: item.id,
+                            name: item.name,
+                            artists: item.artists,
+                            uri: item.uri,
+                            album_type: item.album_type,
+                            total_tracks: item.total_tracks
+                        }
+                    });
+                } catch (err) {
+                    log('search', 'Error processing album:', err);
+                }
+            }
+        }
+
+        if (results.playlists?.items) {
+            log('search', 'Processing playlists:', results.playlists.items.length);
+            for (const playlist of results.playlists.items) {
+                try {
+                    log('search', 'Processing playlist:', playlist.name);
+                    searchResults.push({ type: 'playlist' as const, data: playlist });
+                } catch (err) {
+                    log('search', 'Error processing playlist:', err);
+                }
+            }
+        }
+
+        log('search', 'Final searchResults length:', searchResults.length);
+        
+        getStore().dispatch({
+            type: 'SEARCH_RESULTS_ACTION' as const,
+            results: searchResults,
+            query
+        });
+
+        log('search', 'Final processed results:', JSON.stringify(searchResults, null, 2));
+    }
+
+    @autobind
+    @actionCreator()
+    updateSearchQuery(query: string) {
+        return {
+            type: 'UPDATE_SEARCH_QUERY_ACTION' as const,
+            query
+        };
+    }
+
+    @autobind
+    @withErrorAsync()
+    @withApi()
+    async playSearchResult(searchItem: SearchResultItem, api?: Api): Promise<void> {
+        if (!searchItem) return;
+
+        switch (searchItem.type) {
+            case 'track':
+                await api!.player.play.put({
+                    trackUri: (searchItem.data as SearchTrack).uri
+                });
+                break;
+            
+            case 'album':
+                await api!.player.play.put({
+                    albumUri: (searchItem.data as SearchAlbum).uri
+                });
+                break;
+
+            case 'playlist':
+                await api!.player.play.put({
+                    playlistUri: (searchItem.data as Playlist).uri
+                });
+                break;
+        }
+    }
+
+    @autobind
+    @withErrorAsync()
+    @withApi()
+    async playPlaylist(playlist: Playlist, api?: Api): Promise<void> {
+        if (!playlist) return;
+        await api!.player.play.put({
+            playlistUri: playlist.uri
+        });
+    }
+
+    @autobind
+    @withErrorAsync()
+    @withApi()
+    async playAlbum(album: Album, api?: Api): Promise<void> {
+        if (!album) return;
+        await api!.player.play.put({
+            albumUri: album.album.uri
+        });
     }
 }
 

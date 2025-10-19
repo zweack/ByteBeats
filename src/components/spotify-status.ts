@@ -59,7 +59,7 @@ export class SpotifyStatus {
                 this._statusBarItem.command = 'spotify.trackInfoClick';
             }
         } else {
-            this._statusBarItem.text = '$(debug-pause) Not Playing';
+            // this._statusBarItem.text = '$(debug-pause) Not Playing';
             this._statusBarItem.command = undefined;
             this._statusBarItem.show();
             this._spotifyControls.hideAll();

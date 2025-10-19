@@ -91,5 +91,10 @@ class AlbumTreeItem extends vscode.TreeItem {
         readonly command?: vscode.Command
     ) {
         super(album.album.name, collapsibleState);
+        this.command = {
+            command: 'spotify.playAlbum',
+            title: 'Play Album',
+            arguments: [album]
+        };
     }
 }

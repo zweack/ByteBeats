@@ -66,5 +66,16 @@ export default function (state: ISpotifyStatusState, action: Action): ISpotifySt
             )
         });
     }
+    if (action.type === 'SEARCH_RESULTS_ACTION') {
+        return update(state, {
+            searchResults: { items: action.results },
+            searchQuery: action.query
+        });
+    }
+    if (action.type === 'UPDATE_SEARCH_QUERY_ACTION') {
+        return update(state, {
+            searchQuery: action.query
+        });
+    }
     return state;
 }

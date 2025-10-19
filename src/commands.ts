@@ -58,6 +58,25 @@ export function createCommands(sC: SpotifyClient): { dispose: () => void } {
         actionsCreator.skipBack(seconds);
     });
 
+    const search = commands.registerCommand('spotify.search', () => {
+        actionsCreator.search();
+    });
+
+    const playSearchResult = commands.registerCommand('spotify.playSearchResult', (searchItem: any) => {
+        if (!searchItem) return;
+        actionsCreator.playSearchResult(searchItem);
+    });
+
+    const playPlaylist = commands.registerCommand('spotify.playPlaylist', (playlist: Playlist) => {
+        if (!playlist) return;
+        actionsCreator.playPlaylist(playlist);
+    });
+
+    const playAlbum = commands.registerCommand('spotify.playAlbum', (album: Album) => {
+        if (!album) return;
+        actionsCreator.playAlbum(album);
+    });
+
     return Disposable.from(lyrics,
         next,
         previous,
@@ -81,6 +100,10 @@ export function createCommands(sC: SpotifyClient): { dispose: () => void } {
         seekTo,
         skipForward,
         skipBack,
+        search,
+        playSearchResult,
+        playPlaylist,
+        playAlbum,
         lC.registration
     );
 }

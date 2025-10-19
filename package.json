@@ -49,12 +49,29 @@
           "id": "bytebeats-tracks",
           "name": "Tracks",
           "icon": "resources/dark/logo.svg"
+        },
+        {
+          "id": "bytebeats-search",
+          "name": "Search",
+          "icon": "resources/dark/logo.svg"
         }
       ]
     },
     "commands": [
       {
-        "command": "spotify.next",
+        "command": "spotify.playPlaylist",
+        "title": "Play Playlist"
+      },
+      {
+        "command": "spotify.playAlbum",
+        "title": "Play Album"  
+      },
+      {
+        "command": "spotify.playSearchResult",
+        "title": "Play"
+      },
+      {
+        "command": "spotify.next", 
         "title": "Spotify Play Next Song"
       },
       {
@@ -156,6 +173,14 @@
       {
         "command": "spotify.playTrack",
         "title": "Spotify: Play Track"
+      },
+      {
+        "command": "spotify.search",
+        "title": "Search Spotify",
+        "icon": {
+          "light": "resources/light/search.svg",
+          "dark": "resources/dark/search.svg"
+        }
       }
     ],
     "keybindings": [
@@ -180,7 +205,24 @@
         "mac": "cmd+shift+;"
       }
     ],
-    "menus": {
+      "menus": {
+      "view/item/context": [
+        {
+          "command": "spotify.playSearchResult",
+          "when": "view == bytebeats-search && viewItem =~ /track|album|playlist/",
+          "group": "inline"
+        },
+        {
+          "command": "spotify.playPlaylist",
+          "when": "view == bytebeats-playlists && viewItem == playlist",
+          "group": "inline"
+        },
+        {
+          "command": "spotify.playAlbum",
+          "when": "view == bytebeats-albums && viewItem == album",
+          "group": "inline"
+        }
+      ],
       "view/title": [
         {
           "command": "spotify.loadPlaylists",
@@ -195,6 +237,11 @@
         {
           "command": "spotify.loadTracks",
           "when": "view == bytebeats-tracks",
+          "group": "navigation"
+        },
+        {
+          "command": "spotify.search",
+          "when": "view == bytebeats-search",
           "group": "navigation"
         }
       ]
