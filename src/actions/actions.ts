@@ -505,6 +505,26 @@ class ActionCreator {
                 break;
         }
     }
+
+    @autobind
+    @withErrorAsync()
+    @withApi()
+    async playPlaylist(playlist: Playlist, api?: Api): Promise<void> {
+        if (!playlist) return;
+        await api!.player.play.put({
+            playlistUri: playlist.uri
+        });
+    }
+
+    @autobind
+    @withErrorAsync()
+    @withApi()
+    async playAlbum(album: Album, api?: Api): Promise<void> {
+        if (!album) return;
+        await api!.player.play.put({
+            albumUri: album.album.uri
+        });
+    }
 }
 
 export const actionsCreator = new ActionCreator();

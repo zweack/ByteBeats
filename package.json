@@ -59,6 +59,14 @@
     },
     "commands": [
       {
+        "command": "spotify.playPlaylist",
+        "title": "Play Playlist"
+      },
+      {
+        "command": "spotify.playAlbum",
+        "title": "Play Album"  
+      },
+      {
         "command": "spotify.playSearchResult",
         "title": "Play"
       },
@@ -202,6 +210,16 @@
         {
           "command": "spotify.playSearchResult",
           "when": "view == bytebeats-search && viewItem =~ /track|album|playlist/",
+          "group": "inline"
+        },
+        {
+          "command": "spotify.playPlaylist",
+          "when": "view == bytebeats-playlists && viewItem == playlist",
+          "group": "inline"
+        },
+        {
+          "command": "spotify.playAlbum",
+          "when": "view == bytebeats-albums && viewItem == album",
           "group": "inline"
         }
       ],
