@@ -2,7 +2,7 @@
   "name": "bytebeats",
   "displayName": "ByteBeats",
   "description": "Control Spotify inside VS Code.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "zweack",
   "license": "MIT",
   "engines": {
