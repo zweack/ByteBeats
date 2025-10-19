@@ -5,7 +5,7 @@ import { getState, getStore } from '../store/store';
 import { actionsCreator } from '../actions/actions';
 
 // Simplified types for search results which have a different structure than saved items
-type SearchAlbum = {
+export type SearchAlbum = {
     id: string;
     name: string;
     artists: {
@@ -18,7 +18,7 @@ type SearchAlbum = {
     total_tracks: number;
 };
 
-type SearchTrack = {
+export type SearchTrack = {
     id: string;
     name: string;
     artists: {
@@ -158,6 +158,11 @@ class SearchResultTreeItem extends vscode.TreeItem {
         this.iconPath = {
             light: vscode.Uri.file(path.join(__dirname, '..', '..', 'resources', 'light', `${searchItem.type}.svg`)),
             dark: vscode.Uri.file(path.join(__dirname, '..', '..', 'resources', 'dark', `${searchItem.type}.svg`))
+        };
+        this.command = {
+            command: 'spotify.playSearchResult',
+            title: 'Play',
+            arguments: [searchItem]
         };
     }
 

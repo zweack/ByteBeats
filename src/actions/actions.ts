@@ -2,7 +2,7 @@ import { Api, getApi } from '@vscodespotify/spotify-common/lib/spotify/api';
 import { Album, Playlist, Track } from '@vscodespotify/spotify-common/lib/spotify/consts';
 import autobind from 'autobind-decorator';
 import { commands, Uri, window } from 'vscode';
-import { SearchResultItem } from '../components/tree-search';
+import { SearchResultItem, SearchTrack, SearchAlbum } from '../components/tree-search';
 
 import { createDisposableAuthSever } from '../auth/server/local';
 import { getAuthServerUrl } from '../config/spotify-config';
@@ -477,6 +477,33 @@ class ActionCreator {
             type: 'UPDATE_SEARCH_QUERY_ACTION' as const,
             query
         };
+    }
+
+    @autobind
+    @withErrorAsync()
+    @withApi()
+    async playSearchResult(searchItem: SearchResultItem, api?: Api): Promise<void> {
+        if (!searchItem) return;
+
+        switch (searchItem.type) {
+            case 'track':
+                await api!.player.play.put({
+                    trackUri: (searchItem.data as SearchTrack).uri
+                });
+                break;
+            
+            case 'album':
+                await api!.player.play.put({
+                    albumUri: (searchItem.data as SearchAlbum).uri
+                });
+                break;
+
+            case 'playlist':
+                await api!.player.play.put({
+                    playlistUri: (searchItem.data as Playlist).uri
+                });
+                break;
+        }
     }
 }
 

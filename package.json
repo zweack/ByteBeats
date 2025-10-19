@@ -59,7 +59,11 @@
     },
     "commands": [
       {
-        "command": "spotify.next",
+        "command": "spotify.playSearchResult",
+        "title": "Play"
+      },
+      {
+        "command": "spotify.next", 
         "title": "Spotify Play Next Song"
       },
       {
@@ -194,6 +198,13 @@
       }
     ],
       "menus": {
+      "view/item/context": [
+        {
+          "command": "spotify.playSearchResult",
+          "when": "view == bytebeats-search && viewItem =~ /track|album|playlist/",
+          "group": "inline"
+        }
+      ],
       "view/title": [
         {
           "command": "spotify.loadPlaylists",

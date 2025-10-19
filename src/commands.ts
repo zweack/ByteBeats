@@ -62,6 +62,11 @@ export function createCommands(sC: SpotifyClient): { dispose: () => void } {
         actionsCreator.search();
     });
 
+    const playSearchResult = commands.registerCommand('spotify.playSearchResult', (searchItem: any) => {
+        if (!searchItem) return;
+        actionsCreator.playSearchResult(searchItem);
+    });
+
     return Disposable.from(lyrics,
         next,
         previous,
@@ -86,6 +91,7 @@ export function createCommands(sC: SpotifyClient): { dispose: () => void } {
         skipForward,
         skipBack,
         search,
+        playSearchResult,
         lC.registration
     );
 }
